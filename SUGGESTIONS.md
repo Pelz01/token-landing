@@ -1,6 +1,8 @@
 # Baggable — Architecture & Product Suggestions
 
-> This is a living document. All ideas, discussions, and decisions are recorded here. Treat as suggestions, not implementation mandates.
+> This is a living document. All ideas, discussions, and decisions are recorded here.
+> Updated after a docs/research pass on April 1, 2026.
+> Treat verified facts, product suggestions, and open assumptions differently.
 
 ---
 
@@ -27,9 +29,12 @@ AI-powered landing page generator for Solana tokens. Paste a contract address or
 
 ### Suggested Backend Additions
 
-#### Database: Turso (SQLite on edge)
-- Free tier: 9GB storage
-- Global edge replicas, fast reads
+#### Database: Turso (libSQL / SQLite-compatible cloud database)
+- Current official pricing shows:
+  - Free: 5 GB storage
+  - Developer: 9 GB storage
+- Good fit for MVP persistence with SQLite-style ergonomics
+- Official docs support Next.js and Drizzle integration
 - Schema suggestion:
 
 ```sql
@@ -51,9 +56,10 @@ CREATE INDEX idx_subdomain ON projects(subdomain);
 ```
 
 #### AI: Pollinations
-- Stateless — no memory between calls
-- Solution: send full brief + current file state with every request
-- Supports text (qwen-coder) and images (flux)
+- Viable option for text and image generation
+- We were able to verify public API/docs entry points, but not every product assumption below
+- Recommended implementation pattern:
+  send the full brief + current file state on every request so generation stays deterministic even if provider behavior changes
 
 ```javascript
 // Every request includes all context
@@ -81,15 +87,23 @@ volt.baggable.app  →  renders VOLT token page
 0x1234.baggable.app →  looks up by CA
 ```
 
-### Solution: Cloudflare + Vercel
+### Solution Option: Vercel wildcard domains, with Cloudflare if needed
 
-**Problem:** Vercel free tier has subdomain limits.
+**Verified:**
+- Vercel supports wildcard domains
+- Wildcard SSL requires using Vercel nameservers
+- Cloudflare is optional, not mandatory
 
-**Fix:** Cloudflare handles subdomains (free, unlimited).
+**Use Cloudflare if you want:**
+- extra DNS/routing control
+- Worker-based redirects or rewrites
+- a custom subdomain routing layer outside Vercel
 
 1. Add `baggable.app` to Vercel
-2. Point `*.baggable.app` CNAME to Vercel via Cloudflare
-3. Cloudflare Worker rewrites subdomain to path:
+2. Choose one of:
+   - native Vercel wildcard domain setup
+   - Cloudflare-managed wildcard DNS pointing to Vercel
+3. If using Cloudflare Workers, rewrite subdomain to path:
 ```
 pepe.baggable.app → baggable.app/view/pepe
 ```
@@ -206,7 +220,7 @@ await fetch(`https://api.github.com/repos/${username}/baggable-${slug}/contents/
 ```
 
 ### Why this works
-- Brief = the memory. No complex AI memory needed.
+- Brief = the memory. This is a strong implementation approach even if the AI provider changes.
 - AI gets full context in every request
 - localStorage for client-side, Turso for persistence
 - User's data = their project, not chat history
@@ -229,7 +243,7 @@ await fetch(`https://api.github.com/repos/${username}/baggable-${slug}/contents/
 4. **Terms of Service** — added ✅
 
 ### Branding
-- Logo: checkmark in black square + "Baggable" text
+- Logo: green B-style mark in black rounded square + "Baggable" text
 - Green accent: #00E887
 - Fonts: Geist Sans (fallback: Inter)
 - Solana-only focus
@@ -249,19 +263,47 @@ await fetch(`https://api.github.com/repos/${username}/baggable-${slug}/contents/
 - [ ] Design "view project" page (`/view/[slug]`)
 - [ ] Add pricing page or flow
 - [ ] Add deploy confirmation / success screen
-- [ ] Favicon — currently a checkmark icon (pending final brand review)
+- [ ] Validate Pollinations output quality and reliability before locking it in as the default provider
 
 ---
+
+## Verified Facts
+
+| Topic | Verified status |
+|---|---|
+| Turso pricing | Free is 5 GB, Developer is 9 GB |
+| Turso for Next.js | Official Next.js integration docs exist |
+| Turso with Drizzle | Official Drizzle docs exist |
+| Vercel wildcard domains | Supported |
+| Wildcard SSL on Vercel | Requires Vercel nameservers |
+| Cloudflare Workers redirects | Supported |
+
+## Product Suggestions
+
+| Suggestion | Notes |
+|---|---|
+| Use Turso for MVP | Strong fit for low-ops persistence |
+| Use per-deployment pricing | Likely better than subscriptions for meme-coin creators |
+| Offer subdomain + GitHub + ZIP | Good deployment surface area for launch tools |
+| Keep chat-first UI | Fits the Lovable-style workflow |
+
+## Needs Validation
+
+| Assumption | Why it still needs checking |
+|---|---|
+| Pollinations should be the default AI provider | Need to test quality, latency, uptime, and prompt control |
+| Cloudflare Worker routing is the best production subdomain setup | Native Vercel wildcard support may be enough |
+| Deployment pricing should be $5–$10 | This is a product bet, not a verified market fact |
 
 ## Decisions Made
 
 | Decision | Choice |
 |---|---|
-| AI provider | Pollinations (free, stateless) |
-| Database | Turso (SQLite edge) |
-| Subdomain handling | Cloudflare Worker redirect |
+| AI provider | Not finalized |
+| Database | Turso is the leading option |
+| Subdomain handling | Not finalized |
 | Deployment options | Subdomain + GitHub + Download |
-| Pricing | Per-deployment (not subscription) |
+| Pricing | Lean toward per-deployment |
 | Branding | Green #00E887 accent, Solana focus |
 
 ---
