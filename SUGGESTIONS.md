@@ -109,6 +109,40 @@ const contextWindow = [
 - Summarize into "technical spec" not raw chat history when hitting limits:
   - Project purpose, tech stack, key files, design requirements, known issues
 
+#### Auto-Updating File Context (Proxy Pattern)
+
+Use a JavaScript Proxy to auto-trigger context updates whenever the virtual file system changes:
+
+```javascript
+// Generate ASCII tree from virtual file system
+const generateFileTree = (files) => {
+  const paths = Object.keys(files).sort();
+  return paths.map(p => {
+    const depth = p.split('/').length - 1;
+    const indent = ' '.repeat(depth);
+    const icon = p.endsWith('/') ? '📁' : '📄';
+    return `${indent}${icon} ${p.split('/').pop()}`;
+  }).join('\n');
+};
+
+// Trigger on every file change
+const updateContext = () => {
+  const tree = generateFileTree(virtualFileSystem);
+  // Include 'tree' in your next API call's system prompt
+};
+
+// Watch for changes using Proxy
+const virtualFileSystem = new Proxy({}, {
+  set(target, key, value) {
+    target[key] = value;
+    updateContext(); // Auto-refresh tree
+    return true;
+  }
+});
+```
+
+This keeps the AI grounded in the actual project structure without manual syncing.
+
 ---
 
 ## Subdomain Architecture
