@@ -18,30 +18,36 @@ export default function GetStarted() {
 
   return (
     <div className="auth-page">
-      {/* Header */}
       <header className="auth-header">
-        <Link href="/" className="logo">
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 28 28"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect width="28" height="28" rx="8" fill="currentColor" />
-            <path
-              d="M8 14L12.5 18.5L20 10.5"
-              stroke="white"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span>Baggable</span>
-        </Link>
+        <div className="auth-header-inner">
+          <Link href="/" className="logo">
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 28 28"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <rect width="28" height="28" rx="8" fill="#0A0A0A" />
+              <path
+                d="M9.2 6.6C9.2 5.94 9.74 5.4 10.4 5.4H14.1C18.72 5.4 21.4 7.5 21.4 11C21.4 13.46 19.92 14.92 17.52 15.46C20.28 15.92 22.1 17.56 22.1 20.52C22.1 24.38 19.14 26.6 14.34 26.6H10.4C9.74 26.6 9.2 26.06 9.2 25.4V6.6Z"
+                fill="#00E887"
+              />
+              <path
+                d="M12 9.3H13.24C15.88 9.3 17.34 10.2 17.34 12.16C17.34 14.02 15.86 14.96 13.08 14.96H12V9.3Z"
+                fill="#0A0A0A"
+              />
+              <path
+                d="M12 17.38H13.64C16.54 17.38 18.02 18.28 18.02 20.48C18.02 22.56 16.42 23.68 13.52 23.68H12V17.38Z"
+                fill="#0A0A0A"
+              />
+            </svg>
+            <span>Baggable</span>
+          </Link>
+        </div>
       </header>
 
-      {/* Content */}
       <main className="auth-main">
         <div className="auth-card">
           <h1 className="auth-title">Get started</h1>
@@ -109,7 +115,15 @@ export default function GetStarted() {
           </form>
 
           <p className="auth-terms">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
+            By continuing, you agree to our{" "}
+            <Link href="/terms" className="inline-link">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="inline-link">
+              Privacy Policy
+            </Link>
+            .
           </p>
         </div>
       </main>
