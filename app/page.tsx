@@ -66,15 +66,9 @@ export default function Home() {
         {/* Hero */}
         <div className="hero">
           <h1 className="headline">
-            Ship your Bags
-            <br />
-            landing page
+            Ship your Bags token landing page<br />
+            in seconds
           </h1>
-          <p className="subheadline">
-            Describe your project in plain English.
-            <br />
-            Deploy a live landing page in minutes.
-          </p>
         </div>
 
         {/* Chat area */}
