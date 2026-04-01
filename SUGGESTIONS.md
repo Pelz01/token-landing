@@ -61,20 +61,53 @@ CREATE INDEX idx_subdomain ON projects(subdomain);
 - Recommended implementation pattern:
   send the full brief + current file state on every request so generation stays deterministic even if provider behavior changes
 
+#### Smart Context Hierarchy (from Pollinations bot)
+
+Pollinations bot shared this pattern to keep AI grounded without burning tokens:
+
+| Priority | What | Why |
+|---|---|---|
+| 🔴 Critical | File tree / directory structure | AI needs to know what exists |
+| 🔴 Critical | Current active file (full code) | What they're editing right now |
+| 🟡 Important | Key imports/dependencies | package.json, main imports |
+| 🟡 Important | Last 2-3 turns (raw) | Immediate conversation flow |
+| 🟢 Summarized | Older conversation history | Intent/context only |
+
+**Token math example:**
+
+| Approach | Input Tokens | Cost (qwen-coder) |
+|---|---|---|
+| Full 20-message history | ~4,000 | ~0.00024 pollen |
+| Smart hierarchy | ~800 | ~0.00005 pollen |
+| Savings | 80% | |
+
+**For Baggable's context injection:**
+
 ```javascript
-// Every request includes all context
-{
-  messages: [{
-    role: "system",
-    content: `You are a landing page copywriter for Solana tokens.
-Token: ${brief.name}
-CA: ${brief.ca}
-Tone: ${brief.tone}
-Current section: ${currentHTML}
-Generate an improved version.`
-  }]
-}
+const contextWindow = [
+  // 1. File tree (always fresh)
+  { role: 'system', content: `Project structure:\n${generateFileTree(files)}` },
+
+  // 2. Active section being edited (full)
+  { role: 'system', content: `Editing: ${activeFilePath}\n${files[activeFilePath]}` },
+
+  // 3. Brief (summarized, stored)
+  { role: 'system', content: `Brief: ${JSON.stringify(brief)}` },
+
+  // 4. Last 2 exchanges (raw for continuity)
+  ...lastTwoMessages,
+
+  // 5. Current user prompt
+  { role: 'user', content: userPrompt }
+];
 ```
+
+**Pro tips from Pollinations bot:**
+- Refresh file tree every turn (~50 tokens) — prevents hallucinations
+- Include errors when preview breaks — AI needs to see what failed
+- Use `system` role for code context — weights heavier in attention
+- Summarize into "technical spec" not raw chat history when hitting limits:
+  - Project purpose, tech stack, key files, design requirements, known issues
 
 ---
 
