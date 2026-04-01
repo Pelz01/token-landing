@@ -1,7 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./globals.css";
+
+const PLACEHOLDERS = [
+  "Create a landing page for my Solana meme coin...",
+  "I want a landing page for my token, the CA is 0x...",
+  "Make a gaming token page on Solana...",
+  "Design a page for my NFT collection on Solana...",
+  "Build a page for my DeFi protocol on Solana...",
+];
 
 type Message = {
   role: "user" | "assistant";
@@ -12,6 +20,42 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [displayText, setDisplayText] = useState("");
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Typewriter effect
+  useEffect(() => {
+    const target = PLACEHOLDERS[placeholderIdx];
+    let charIdx = 0;
+    let forward = true;
+
+    const tick = () => {
+      if (forward) {
+        charIdx++;
+        setDisplayText(target.slice(0, charIdx));
+        if (charIdx === target.length) {
+          forward = false;
+          typingRef.current = setTimeout(tick, 2200);
+        } else {
+          typingRef.current = setTimeout(tick, 45);
+        }
+      } else {
+        charIdx--;
+        setDisplayText(target.slice(0, charIdx));
+        if (charIdx === 0) {
+          setPlaceholderIdx((prev) => (prev + 1) % PLACEHOLDERS.length);
+        } else {
+          typingRef.current = setTimeout(tick, 25);
+        }
+      }
+    };
+
+    typingRef.current = setTimeout(tick, 500);
+    return () => {
+      if (typingRef.current) clearTimeout(typingRef.current);
+    };
+  }, [placeholderIdx]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,8 +81,8 @@ export default function Home() {
 
   return (
     <div className="app">
-      {/* Header */}
-      <header className="header">
+      {/* Header — matches Get Started layout */}
+      <header className="auth-header">
         <div className="logo">
           <svg
             width="28"
@@ -58,7 +102,9 @@ export default function Home() {
           </svg>
           <span>Baggable</span>
         </div>
-        <a href="/get-started" className="get-started-btn">Get started</a>
+        <a href="/get-started" className="get-started-btn">
+          Get started
+        </a>
       </header>
 
       {/* Main */}
@@ -66,47 +112,14 @@ export default function Home() {
         {/* Hero */}
         <div className="hero">
           <h1 className="headline">
-            Ship your Bags token landing page<br />
+            Ship your Bags token landing page
+            <br />
             in seconds
           </h1>
         </div>
 
         {/* Chat area */}
         <div className="chat-area">
-          {messages.length === 0 && (
-            <div className="chat-placeholder">
-              <div className="suggestion-chips">
-                <button
-                  onClick={() =>
-                    setInput(
-                      "Create a landing page for my Solana meme coin called PEPE with 1B supply"
-                    )
-                  }
-                >
-                  Meme coin page
-                </button>
-                <button
-                  onClick={() =>
-                    setInput(
-                      "Build a page for my DeFi protocol on Base called VOLT with 5% fees"
-                    )
-                  }
-                >
-                  DeFi protocol page
-                </button>
-                <button
-                  onClick={() =>
-                    setInput(
-                      "Make a landing page for my gaming token on Arbitrum called SHARD"
-                    )
-                  }
-                >
-                  Gaming token page
-                </button>
-              </div>
-            </div>
-          )}
-
           {messages.map((msg, i) => (
             <div key={i} className={`message ${msg.role}`}>
               <div className="message-avatar">
@@ -131,12 +144,7 @@ export default function Home() {
         {/* Input */}
         <form className="input-area" onSubmit={handleSubmit}>
           <button type="button" className="attach-btn">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-            >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path
                 d="M10 4V16M4 10H16"
                 stroke="currentColor"
@@ -147,18 +155,17 @@ export default function Home() {
           </button>
           <input
             type="text"
-            placeholder="Describe your project..."
+            placeholder={displayText}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="chat-input"
           />
-          <button type="submit" className="send-btn" disabled={!input.trim()}>
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-            >
+          <button
+            type="submit"
+            className="send-btn"
+            disabled={!input.trim() && !displayText}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path
                 d="M3 10L17 10M17 10L11 4M17 10L11 16"
                 stroke="currentColor"

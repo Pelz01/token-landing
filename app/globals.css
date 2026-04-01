@@ -16,6 +16,8 @@
   --gray-600: #525252;
   --gray-700: #404040;
   --gray-800: #1a1a1a;
+  --green: #00E887;
+  --green-dim: rgba(0, 232, 135, 0.15);
   --max-w: 860px;
   --side-pad: 32px;
 }
@@ -65,7 +67,7 @@ body {
 }
 
 .logo svg {
-  color: var(--black);
+  color: var(--green);
   flex-shrink: 0;
 }
 
@@ -249,7 +251,7 @@ body {
 }
 
 .input-area:focus-within {
-  border-color: var(--gray-400);
+  border-color: var(--green);
 }
 
 .attach-btn {
@@ -285,9 +287,9 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: var(--black);
+  background: var(--green);
   border: none;
-  color: var(--white);
+  color: var(--black);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -471,6 +473,11 @@ body {
 }
 
 .email-submit:hover { opacity: 0.85; }
+
+.get-started-btn {
+  background: var(--green);
+  color: var(--black);
+}
 .email-submit:disabled { opacity: 0.3; cursor: not-allowed; }
 
 /* Terms */
