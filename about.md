@@ -1,14 +1,14 @@
-# Token Landing
+# Baggable
 
 AI-powered landing page generator for crypto tokens.
 
 ## What it does
 
-Turn a token brief into a professional landing page in minutes. Built for token teams who need to ship fast without compromising on quality.
+Describe your token in plain English. Deploy a professional landing page in minutes. Built for token teams who need to ship fast without compromising on quality.
 
 ## Features
 
-- **AI Copy Generation** — Brief in, full page out. No blank canvas.
+- **Chat-First Interface** — Describe what you want, get a full landing page
 - **Token-Specific Sections** — Hero, Tokenomics, Roadmap, Team, Social Links
 - **One-Click Deploy** — Ship to Vercel in seconds
 - **Easy Editing** — Regenerate specific sections or tweak manually
@@ -24,7 +24,7 @@ Turn a token brief into a professional landing page in minutes. Built for token 
 
 - Next.js
 - Tailwind CSS
-- Anthropic / Claude for copy generation
+- Pollinations AI for copy generation
 
 ## Status
 
