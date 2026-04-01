@@ -22,14 +22,13 @@ export default function Home() {
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsGenerating(true);
 
-    // Simulate AI response — wire to Pollinations here
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content:
-            "Got it. Building your token landing page now... This is a demo response — AI generation coming soon.",
+            "Got it. Building your Bags landing page now... This is a demo — AI generation coming soon.",
         },
       ]);
       setIsGenerating(false);
@@ -42,38 +41,39 @@ export default function Home() {
       <header className="header">
         <div className="logo">
           <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
+            width="28"
+            height="28"
+            viewBox="0 0 28 28"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <rect width="24" height="24" rx="6" fill="currentColor" />
+            <rect width="28" height="28" rx="8" fill="currentColor" />
             <path
-              d="M7 12L10.5 15.5L17 8.5"
+              d="M8 14L12.5 18.5L20 10.5"
               stroke="white"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           </svg>
-          <span>Baggable</span>
+          <span>Bags</span>
         </div>
         <button className="get-started-btn">Get started</button>
       </header>
 
-      {/* Hero */}
+      {/* Main */}
       <main className="main">
+        {/* Hero */}
         <div className="hero">
           <h1 className="headline">
-            Build your token&rsquo;s
+            Ship your Bags
             <br />
             landing page
           </h1>
           <p className="subheadline">
-            Describe your token in plain English.
+            Describe your project in plain English.
             <br />
-            Deploy a professional landing page in minutes.
+            Deploy a live landing page in minutes.
           </p>
         </div>
 
@@ -85,16 +85,16 @@ export default function Home() {
                 <button
                   onClick={() =>
                     setInput(
-                      "Create a landing page for a Solana meme coin called PEPE with 1B supply"
+                      "Create a landing page for my Solana meme coin called PEPE with 1B supply"
                     )
                   }
                 >
-                  Create a meme coin landing page
+                  Meme coin page
                 </button>
                 <button
                   onClick={() =>
                     setInput(
-                      "Build a page for a DeFi protocol on Base called VOLT with 5% fees"
+                      "Build a page for my DeFi protocol on Base called VOLT with 5% fees"
                     )
                   }
                 >
@@ -103,7 +103,7 @@ export default function Home() {
                 <button
                   onClick={() =>
                     setInput(
-                      "Make a landing page for a gaming token on Arbitrum called SHARD"
+                      "Make a landing page for my gaming token on Arbitrum called SHARD"
                     )
                   }
                 >
@@ -153,7 +153,7 @@ export default function Home() {
           </button>
           <input
             type="text"
-            placeholder="Describe your token..."
+            placeholder="Describe your project..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="chat-input"
