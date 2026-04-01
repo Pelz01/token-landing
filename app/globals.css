@@ -16,6 +16,8 @@
   --gray-600: #525252;
   --gray-700: #404040;
   --gray-800: #1a1a1a;
+  --max-w: 860px;
+  --side-pad: 32px;
 }
 
 html,
@@ -28,13 +30,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ============================================
+   HOMEPAGE — APP SHELL
+   ============================================ */
+
 .app {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  max-width: 720px;
+  max-width: var(--max-w);
   margin: 0 auto;
-  padding: 0 32px;
+  padding: 0 var(--side-pad);
 }
 
 /* Header */
@@ -55,6 +61,7 @@ body {
   font-weight: 800;
   color: var(--black);
   letter-spacing: -0.03em;
+  text-decoration: none;
 }
 
 .logo svg {
@@ -74,13 +81,14 @@ body {
   transition: opacity 0.15s;
   font-family: inherit;
   letter-spacing: -0.01em;
+  text-decoration: none;
 }
 
 .get-started-btn:hover {
   opacity: 0.85;
 }
 
-/* Main — centers everything vertically and horizontally */
+/* Main — centers everything */
 .main {
   flex: 1;
   display: flex;
@@ -90,13 +98,13 @@ body {
   gap: 40px;
 }
 
-/* Hero — fully centered */
+/* Hero */
 .hero {
   text-align: center;
 }
 
 .headline {
-  font-size: clamp(40px, 7vw, 64px);
+  font-size: clamp(36px, 5vw, 56px);
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.035em;
@@ -219,12 +227,8 @@ body {
   animation: bounce 1.2s infinite;
 }
 
-.dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
 
 @keyframes bounce {
   0%, 60%, 100% { transform: translateY(0); }
@@ -261,9 +265,7 @@ body {
   flex-shrink: 0;
 }
 
-.attach-btn:hover {
-  color: var(--gray-600);
-}
+.attach-btn:hover { color: var(--gray-600); }
 
 .chat-input {
   flex: 1;
@@ -277,9 +279,7 @@ body {
   letter-spacing: -0.01em;
 }
 
-.chat-input::placeholder {
-  color: var(--gray-400);
-}
+.chat-input::placeholder { color: var(--gray-400); }
 
 .send-btn {
   width: 40px;
@@ -301,6 +301,213 @@ body {
   cursor: not-allowed;
 }
 
-.send-btn:not(:disabled):hover {
-  opacity: 0.8;
+.send-btn:not(:disabled):hover { opacity: 0.8; }
+
+/* ============================================
+   AUTH PAGE — GET STARTED
+   ============================================ */
+
+.auth-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--white);
+}
+
+.auth-header {
+  display: flex;
+  align-items: center;
+  padding: 24px var(--side-pad);
+  border-bottom: 1px solid var(--gray-200);
+  flex-shrink: 0;
+}
+
+.auth-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px var(--side-pad);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--black);
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  font-size: 15px;
+  color: var(--gray-500);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+/* Auth buttons */
+.auth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  color: var(--black);
+  position: relative;
+  letter-spacing: -0.01em;
+}
+
+.auth-btn:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+}
+
+.auth-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-btn.disabled:hover {
+  background: var(--white);
+  border-color: var(--gray-200);
+}
+
+.auth-btn svg {
+  flex-shrink: 0;
+}
+
+.coming-soon {
+  position: absolute;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-400);
+  background: var(--gray-100);
+  padding: 3px 8px;
+  border-radius: 100px;
+  letter-spacing: 0;
+}
+
+/* Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  color: var(--gray-400);
+  font-size: 13px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--gray-200);
+}
+
+/* Email form */
+.email-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.email-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--black);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s;
+  letter-spacing: -0.01em;
+}
+
+.email-input:focus {
+  border-color: var(--gray-400);
+}
+
+.email-input::placeholder {
+  color: var(--gray-400);
+}
+
+.email-submit {
+  padding: 12px 20px;
+  background: var(--black);
+  color: var(--white);
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.email-submit:hover { opacity: 0.85; }
+.email-submit:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Terms */
+.auth-terms {
+  font-size: 12px;
+  color: var(--gray-400);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ============================================
+   DESKTOP RESPONSIVENESS
+   ============================================ */
+
+@media (min-width: 1024px) {
+  :root {
+    --side-pad: 48px;
+    --max-w: 960px;
+  }
+
+  .headline {
+    font-size: 56px;
+  }
+
+  .suggestion-chips button {
+    padding: 11px 18px;
+    font-size: 14px;
+  }
+
+  .auth-card {
+    max-width: 440px;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --side-pad: 64px;
+    --max-w: 1100px;
+  }
 }

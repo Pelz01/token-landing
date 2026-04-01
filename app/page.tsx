@@ -56,9 +56,9 @@ export default function Home() {
               strokeLinejoin="round"
             />
           </svg>
-          <span>Bags</span>
+          <span>Baggable</span>
         </div>
-        <button className="get-started-btn">Get started</button>
+        <a href="/get-started" className="get-started-btn">Get started</a>
       </header>
 
       {/* Main */}
