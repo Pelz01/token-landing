@@ -3,10 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+
+import { SitePreview } from "../components/site-preview";
+import { ProjectRecord } from "../lib/builder-types";
 import "./globals.css";
 
 const AUTH_STORAGE_KEY = "baggable-auth";
 const THEME_STORAGE_KEY = "baggable-theme";
+const PROJECT_STORAGE_KEY = "baggable-current-project-id";
+const MODE_STORAGE_KEY = "baggable-mode";
 
 const PLACEHOLDERS = [
   "Paste your contract address and I will build the site around it...",
@@ -14,42 +19,100 @@ const PLACEHOLDERS = [
   "Make a clean one-page site for my token with a Bags CTA...",
 ];
 
-type PreviewState = {
-  projectName: string;
-  symbol: string;
-  tagline: string;
-  description: string;
-  bagsUrl: string;
-  contractAddress: string;
-  sections: string[];
-};
+const LANDING_STEPS = [
+  {
+    number: "01",
+    title: "Start with what you have",
+    body: "Paste a contract address, a Bags link, or just describe the project in plain language.",
+  },
+  {
+    number: "02",
+    title: "Choose the visual direction",
+    body: "Pick from Neo Brutalism, Minimal, 3D Neon, or Black & White and refine the copy as you go.",
+  },
+  {
+    number: "03",
+    title: "Publish when it feels right",
+    body: "Keep editing in the builder, then publish the same preview to a live project page.",
+  },
+];
+
+const LANDING_FEATURES = [
+  "Contract-ready page structure",
+  "Four distinct template directions",
+  "Bags call-to-action built in",
+  "Saved drafts and follow-up edits",
+  "Preview and publish use the same renderer",
+  "Mobile-friendly landing pages by default",
+];
+
+const LANDING_TEMPLATES = [
+  {
+    key: "brutal",
+    name: "Neo Brutalism",
+    note: "Loud, blocky, impossible to ignore",
+  },
+  {
+    key: "minimal",
+    name: "Minimal",
+    note: "Soft, calm, product-first",
+  },
+  {
+    key: "neon3d",
+    name: "3D Neon",
+    note: "Futuristic glow with depth",
+  },
+  {
+    key: "mono",
+    name: "Black & White",
+    note: "Editorial, sharp, stripped back",
+  },
+];
+
+const LANDING_PRICING = [
+  {
+    name: "Builder",
+    price: "Start free",
+    body: "Create drafts, test prompts, and shape the page before you commit to going live.",
+    bullets: ["Generate website drafts", "Try the four styles", "Refine with follow-up prompts"],
+  },
+  {
+    name: "Publish",
+    price: "Pay when you launch",
+    body: "Use the builder until the page feels ready, then publish the live version from the same preview.",
+    bullets: ["Live published page", "Bags-ready CTA and structure", "Shareable public URL"],
+  },
+  {
+    name: "Studio",
+    price: "For repeat launches",
+    body: "Best for teams or creators shipping more than one project and needing a cleaner workflow.",
+    bullets: ["Multiple project drafts", "Faster iteration across launches", "Consistent page quality"],
+  },
+];
+
+const LANDING_FAQ = [
+  {
+    question: "Do I need a contract address first?",
+    answer: "No. You can start from a plain-language prompt, then add the address and links later.",
+  },
+  {
+    question: "Can I change the style after generation?",
+    answer: "Yes. The builder is meant to keep iterating until the page actually feels right.",
+  },
+  {
+    question: "Is the preview the same thing that gets published?",
+    answer: "Yes. The live page uses the same renderer as the preview, so you are not designing twice.",
+  },
+  {
+    question: "Is this only for brand new tokens?",
+    answer: "No. It is designed for projects that already exist and need a better public-facing site fast.",
+  },
+];
 
 type Message = {
   role: "assistant" | "user";
   content: string;
 };
-
-function inferPreview(prompt: string): PreviewState {
-  const cleaned = prompt.trim();
-  const upper = cleaned.toUpperCase();
-  const symbolMatch = upper.match(/\$([A-Z0-9]{2,10})\b/) || upper.match(/\b([A-Z]{2,6})\b/);
-  const symbol = symbolMatch?.[1] ?? "TOKEN";
-
-  const caMatch = cleaned.match(/\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/)?.[0] ?? "";
-  const nameFromCalled = cleaned.match(/called\s+([A-Za-z0-9-]+)/i)?.[1];
-  const nameFromNamed = cleaned.match(/named\s+([A-Za-z0-9-]+)/i)?.[1];
-  const projectName = nameFromCalled || nameFromNamed || "Your Project";
-
-  return {
-    projectName,
-    symbol,
-    tagline: `A clearer, more credible home for ${projectName}.`,
-    description: cleaned,
-    bagsUrl: "https://bags.fm/",
-    contractAddress: caMatch || "Add a contract address to show token-specific details here.",
-    sections: ["Hero", "About", "Tokenomics", "Roadmap", "Community", "Trade on Bags"],
-  };
-}
 
 function Logo({ inverse = false }: { inverse?: boolean }) {
   return (
@@ -81,6 +144,16 @@ function Logo({ inverse = false }: { inverse?: boolean }) {
   );
 }
 
+async function readJson<T>(response: Response) {
+  const data = (await response.json()) as T & { error?: string };
+
+  if (!response.ok) {
+    throw new Error(data.error || "Request failed.");
+  }
+
+  return data;
+}
+
 export default function Home() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -90,20 +163,46 @@ export default function Home() {
   const [displayText, setDisplayText] = useState("");
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [mode, setMode] = useState<"landing" | "building">("landing");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [processingStep, setProcessingStep] = useState(0);
-  const [preview, setPreview] = useState<PreviewState | null>(null);
+  const [project, setProject] = useState<ProjectRecord | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [processingStep, setProcessingStep] = useState(0);
   const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const loggedIn = window.localStorage.getItem(AUTH_STORAGE_KEY) === "true";
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const storedProjectId = window.localStorage.getItem(PROJECT_STORAGE_KEY);
+    const storedMode = window.localStorage.getItem(MODE_STORAGE_KEY);
+
     setIsLoggedIn(loggedIn);
     if (storedTheme === "dark" || storedTheme === "light") {
       setTheme(storedTheme);
     }
     setIsReady(true);
+
+    if (loggedIn && storedProjectId && storedMode === "building") {
+      void (async () => {
+        try {
+          const data = await readJson<{ project: ProjectRecord }>(
+            await fetch(`/api/projects/${storedProjectId}`, { cache: "no-store" }),
+          );
+          setProject(data.project);
+          setMode("building");
+          setMessages([
+            {
+              role: "assistant",
+              content: `Restored your latest draft for ${data.project.draft.projectName}. Continue prompting to refine it.`,
+            },
+          ]);
+        } catch {
+          window.localStorage.removeItem(PROJECT_STORAGE_KEY);
+          window.localStorage.removeItem(MODE_STORAGE_KEY);
+        }
+      })();
+    }
   }, []);
 
   const toggleTheme = () => {
@@ -119,7 +218,7 @@ export default function Home() {
 
     const tick = () => {
       if (forward) {
-        charIdx++;
+        charIdx += 1;
         setDisplayText(target.slice(0, charIdx));
         if (charIdx === target.length) {
           forward = false;
@@ -128,7 +227,7 @@ export default function Home() {
           typingRef.current = setTimeout(tick, 45);
         }
       } else {
-        charIdx--;
+        charIdx -= 1;
         setDisplayText(target.slice(0, charIdx));
         if (charIdx === 0) {
           setPlaceholderIdx((prev) => (prev + 1) % PLACEHOLDERS.length);
@@ -157,7 +256,7 @@ export default function Home() {
     return () => window.clearInterval(interval);
   }, [isGenerating]);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmed = input.trim();
     if (!trimmed || isGenerating) return;
@@ -168,29 +267,78 @@ export default function Home() {
     }
 
     setMode("building");
+    setError(null);
     setIsGenerating(true);
-    setProcessingStep(0);
     setInput("");
-    setPreview(null);
-    setMessages([
-      { role: "user", content: trimmed },
-      {
-        role: "assistant",
-        content: "Building your website now. I’m shaping the hero, structure, and Bags-ready sections.",
-      },
-    ]);
+    setMessages((current) => [...current, { role: "user", content: trimmed }]);
 
-    window.setTimeout(() => {
-      setPreview(inferPreview(trimmed));
+    try {
+      const minimumDelay = new Promise((resolve) => window.setTimeout(resolve, 1200));
+      const request = readJson<{ project: ProjectRecord; assistantMessage: string }>(
+        await fetch("/api/projects/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: trimmed,
+            projectId: project?.id,
+          }),
+        }),
+      );
+
+      const [data] = await Promise.all([request, minimumDelay]);
+      setProject(data.project);
+      setMessages((current) => [
+        ...current,
+        { role: "assistant", content: data.assistantMessage },
+      ]);
+      window.localStorage.setItem(PROJECT_STORAGE_KEY, data.project.id);
+      window.localStorage.setItem(MODE_STORAGE_KEY, "building");
+    } catch (submitError) {
+      const message =
+        submitError instanceof Error ? submitError.message : "Unable to build this project.";
+      setError(message);
       setMessages((current) => [
         ...current,
         {
           role: "assistant",
-          content: "Your first draft is ready. Keep prompting to refine the copy, structure, or visual direction.",
+          content: `The draft could not be generated yet. ${message}`,
         },
       ]);
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!project || isPublishing) return;
+
+    setIsPublishing(true);
+    setError(null);
+
+    try {
+      const data = await readJson<{ project: ProjectRecord }>(
+        await fetch(`/api/projects/${project.id}/publish`, {
+          method: "POST",
+        }),
+      );
+
+      setProject(data.project);
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: `Published. Your site is now live at /p/${data.project.slug}.`,
+        },
+      ]);
+    } catch (publishError) {
+      const message =
+        publishError instanceof Error ? publishError.message : "Unable to publish this project.";
+      setError(message);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   if (!isReady) {
@@ -234,6 +382,8 @@ export default function Home() {
                   </p>
                 </div>
               ) : null}
+
+              {error ? <p className="builder-error">{error}</p> : null}
             </div>
 
             <form className="input-area builder-input" onSubmit={handleSubmit}>
@@ -271,6 +421,21 @@ export default function Home() {
           <section className="builder-right">
             <div className="builder-preview-toolbar">
               <div className="builder-preview-pill">Preview</div>
+              <div className="builder-preview-actions">
+                {project?.slug ? (
+                  <Link href={`/p/${project.slug}`} className="builder-open-link" target="_blank">
+                    Open site
+                  </Link>
+                ) : null}
+                <button
+                  type="button"
+                  className="builder-publish-button"
+                  onClick={handlePublish}
+                  disabled={!project || isGenerating || isPublishing}
+                >
+                  {isPublishing ? "Publishing..." : project?.slug ? "Published" : "Publish"}
+                </button>
+              </div>
             </div>
 
             <div className="builder-preview-panel">
@@ -279,13 +444,7 @@ export default function Home() {
                   <div className="preview-topline preview-topline-light">
                     <div className="preview-badge preview-badge-light">Building live preview</div>
                     <p className="preview-processing-status">
-                      {
-                        [
-                          "Mapping layout",
-                          "Generating sections",
-                          "Finalizing first draft",
-                        ][processingStep]
-                      }
+                      {["Mapping layout", "Generating sections", "Finalizing first draft"][processingStep]}
                     </p>
                   </div>
 
@@ -320,44 +479,8 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              ) : preview ? (
-                <div className="preview-browser preview-browser-light builder-preview-browser">
-                  <div className="preview-browser-bar preview-browser-bar-light">
-                    <span />
-                  </div>
-
-                  <div className="preview-canvas preview-canvas-light">
-                    <div className="preview-topline preview-topline-light">
-                      <div className="preview-badge preview-badge-light">Bags-ready</div>
-                      <a href={preview.bagsUrl} target="_blank" rel="noreferrer">
-                        View on Bags
-                      </a>
-                    </div>
-
-                    <div className="preview-hero-block preview-hero-block-light">
-                      <p className="preview-symbol">{preview.symbol}</p>
-                      <h2>{preview.projectName}</h2>
-                      <p className="preview-tagline">{preview.tagline}</p>
-                      <p className="preview-description">{preview.description}</p>
-                    </div>
-
-                    <div className="preview-grid">
-                      <div className="preview-card preview-card-light">
-                        <span className="panel-label">Contract</span>
-                        <p>{preview.contractAddress}</p>
-                      </div>
-
-                      <div className="preview-card preview-card-light">
-                        <span className="panel-label">Suggested sections</span>
-                        <div className="preview-section-list">
-                          {preview.sections.map((section) => (
-                            <span key={section}>{section}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              ) : project ? (
+                <SitePreview draft={project.draft} />
               ) : null}
             </div>
           </section>
@@ -431,6 +554,128 @@ export default function Home() {
               </svg>
             </button>
           </form>
+
+          <p className="input-helper">
+            Try a style in your prompt: <span>neo brutalism</span>, <span>minimal</span>,{" "}
+            <span>3D neon</span>, or <span>black &amp; white</span>.
+          </p>
+
+          <section className="landing-block">
+            <div className="section-heading">
+              <span>How it works</span>
+              <h2>Made for fast launches, not messy setup.</h2>
+            </div>
+
+            <div className="steps-grid">
+              {LANDING_STEPS.map((step) => (
+                <article key={step.number} className="step-card">
+                  <span className="step-number">{step.number}</span>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="landing-block">
+            <div className="section-heading">
+              <span>Templates</span>
+              <h2>Four distinct directions, not four tiny variations.</h2>
+            </div>
+
+            <div className="template-grid">
+              {LANDING_TEMPLATES.map((template) => (
+                <article key={template.key} className="template-card">
+                  <div className={`template-preview template-preview-${template.key}`}>
+                    <div className="template-preview-bar" />
+                    <div className="template-preview-body">
+                      <div className="template-preview-kicker">Template</div>
+                      <div className="template-preview-title">{template.name}</div>
+                      <div className="template-preview-lines">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </div>
+                  </div>
+                  <h3>{template.name}</h3>
+                  <p>{template.note}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="landing-block">
+            <div className="section-heading">
+              <span>What you get</span>
+              <h2>A product flow that stays useful after the first prompt.</h2>
+            </div>
+
+            <div className="feature-grid">
+              {LANDING_FEATURES.map((feature) => (
+                <article key={feature} className="feature-card">
+                  <span className="feature-dot" />
+                  <p>{feature}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="landing-block">
+            <div className="section-heading">
+              <span>Pricing</span>
+              <h2>Simple pricing logic that matches the product.</h2>
+            </div>
+
+            <div className="pricing-grid">
+              {LANDING_PRICING.map((tier) => (
+                <article key={tier.name} className="pricing-card">
+                  <div className="pricing-card-top">
+                    <span>{tier.name}</span>
+                    <strong>{tier.price}</strong>
+                  </div>
+                  <p>{tier.body}</p>
+                  <ul>
+                    {tier.bullets.map((bullet) => (
+                      <li key={bullet}>{bullet}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="landing-block landing-block-faq">
+            <div className="section-heading">
+              <span>FAQ</span>
+              <h2>The questions people usually ask before they try it.</h2>
+            </div>
+
+            <div className="faq-list">
+              {LANDING_FAQ.map((item) => (
+                <article key={item.question} className="faq-card">
+                  <h3>{item.question}</h3>
+                  <p>{item.answer}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <footer className="landing-footer">
+            <div className="landing-footer-brand">
+              <Logo />
+              <p>
+                Build a sharper home for your Bags project with a cleaner preview, better structure,
+                and faster publishing.
+              </p>
+            </div>
+
+            <div className="landing-footer-links">
+              <Link href="/get-started">Get started</Link>
+              <Link href="/terms">Terms</Link>
+              <Link href="/privacy">Privacy</Link>
+            </div>
+          </footer>
         </section>
       </main>
     </div>
